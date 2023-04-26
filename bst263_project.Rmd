@@ -1,0 +1,65 @@
+---
+title: "bst263_project"
+author: "Zhuoran (Joanne) Wei"
+date: "2023-04-25"
+output: html_document
+---
+
+## load raw data 
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+setwd("/Users/weizhuoran/Desktop/bst234/midterm")
+load("1000genomes.Rdata")
+dim(geno)
+```
+
+## run pca
+
+```{r, message = FALSE, warning=FALSE}
+if (!require(RSpectra)){install.packages("RSpectra")}
+
+library(RSpectra)
+
+pca <- svds(geno, k = 200)$u
+
+dim(pca)
+
+```
+
+## split 7:3 - training : testing
+
+```{r}
+set.seed(123)
+
+train <- sample(1:dim(pca)[1], round(dim(pca)[1]*0.7), replace = FALSE)
+
+df_train <- data.frame(pca[train, ])
+
+test <- setdiff(1:dim(pca)[1], train)
+
+df_test <- data.frame(pca[test, ])
+
+dim(df_train)
+dim(df_test)
+
+save(df_train, df_test, population, file = "df_train_test.RData")
+
+#rm(list = ls())
+
+load("df_train_test.RData")
+
+```
+
+
+```{r}
+ggplot(df_train) +
+  geom_point(aes(x = X1, y =X2, color = population[train])) +
+  theme_bw() +
+  labs( x = "first eigenvector", y = "second eigenvector") +
+  xlim(-0.07, -0.03) + ylim(-0.05, 0.06) +
+  scale_color_brewer(palette = "Set1")
+```
+
