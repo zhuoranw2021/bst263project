@@ -1,0 +1,375 @@
+---
+title: "BART"
+author: "Fuyu Guo"
+date: "2023-04-29"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE)
+```
+
+## Load libraries and data
+```{r}
+library(tidyverse)
+library(caret)
+library(parallel)
+library(BART)
+load("df_train_test.RData")
+```
+
+## Split data into 10 CV-folds
+
+```{r}
+set.seed(123) 
+folds <- createFolds(1:352, k = 10, list = TRUE, returnTrain = FALSE)
+```
+
+
+
+## block for ntree = 10 
+```{r}
+ntree <- 10
+true_type <- numeric(0)
+prediction_type <- numeric(0)
+for (i in 1:10) {
+  X_train <- df_train[-folds[[i]],]
+  Y_train <- population_train[-folds[[i]]]
+  X_val <- df_train[folds[[i]],]
+  Y_val <- population_train[folds[[i]]]
+  
+  Y_train_CEU <- ifelse(Y_train == "CEU", 1, 0)
+  Y_train_FIN <- ifelse(Y_train == "FIN", 1, 0)
+  Y_train_GBR <- ifelse(Y_train == "GBR", 1, 0)
+  Y_train_IBS <- ifelse(Y_train == "IBS", 1, 0)
+  Y_train_TSI <- ifelse(Y_train == "TSI", 1, 0)
+  
+  
+  fit_CEU <- mc.gbart(X_train, Y_train_CEU, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_FIN <- mc.gbart(X_train, Y_train_FIN, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_GBR <- mc.gbart(X_train, Y_train_GBR, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_IBS <- mc.gbart(X_train, Y_train_IBS, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_TSI <- mc.gbart(X_train, Y_train_TSI, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  prob_matrix <- matrix(NA, nrow = length(Y_val), ncol = 5)
+  prob_matrix[,1] <- fit_CEU$prob.test.mean
+  prob_matrix[,2] <- fit_FIN$prob.test.mean
+  prob_matrix[,3] <- fit_GBR$prob.test.mean
+  prob_matrix[,4] <- fit_IBS$prob.test.mean
+  prob_matrix[,5] <- fit_TSI$prob.test.mean
+  
+  # select the column with the highest probability
+  prob_vector <- apply(prob_matrix, 1, which.max)
+  prediction <- case_when(prob_vector == 1 ~ "CEU",
+                          prob_vector == 2 ~ "FIN",
+                          prob_vector == 3 ~ "GBR",
+                          prob_vector == 4 ~ "IBS",
+                          prob_vector == 5 ~ "TSI")
+  
+  true_type <- c(true_type, Y_val)
+  prediction_type <- c(prediction_type, prediction)
+}
+
+
+table(true_type, prediction_type)
+mean(true_type == prediction_type)
+```
+
+
+## block for ntree = 50
+
+```{r}
+ntree <- 50
+true_type <- numeric(0)
+prediction_type <- numeric(0)
+for (i in 1:10) {
+  X_train <- df_train[-folds[[i]],]
+  Y_train <- population_train[-folds[[i]]]
+  X_val <- df_train[folds[[i]],]
+  Y_val <- population_train[folds[[i]]]
+  
+  Y_train_CEU <- ifelse(Y_train == "CEU", 1, 0)
+  Y_train_FIN <- ifelse(Y_train == "FIN", 1, 0)
+  Y_train_GBR <- ifelse(Y_train == "GBR", 1, 0)
+  Y_train_IBS <- ifelse(Y_train == "IBS", 1, 0)
+  Y_train_TSI <- ifelse(Y_train == "TSI", 1, 0)
+  
+  
+  fit_CEU <- mc.gbart(X_train, Y_train_CEU, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_FIN <- mc.gbart(X_train, Y_train_FIN, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_GBR <- mc.gbart(X_train, Y_train_GBR, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_IBS <- mc.gbart(X_train, Y_train_IBS, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_TSI <- mc.gbart(X_train, Y_train_TSI, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  prob_matrix <- matrix(NA, nrow = length(Y_val), ncol = 5)
+  prob_matrix[,1] <- fit_CEU$prob.test.mean
+  prob_matrix[,2] <- fit_FIN$prob.test.mean
+  prob_matrix[,3] <- fit_GBR$prob.test.mean
+  prob_matrix[,4] <- fit_IBS$prob.test.mean
+  prob_matrix[,5] <- fit_TSI$prob.test.mean
+  
+  # select the column with the highest probability
+  prob_vector <- apply(prob_matrix, 1, which.max)
+  prediction <- case_when(prob_vector == 1 ~ "CEU",
+                          prob_vector == 2 ~ "FIN",
+                          prob_vector == 3 ~ "GBR",
+                          prob_vector == 4 ~ "IBS",
+                          prob_vector == 5 ~ "TSI")
+  
+  true_type <- c(true_type, Y_val)
+  prediction_type <- c(prediction_type, prediction)
+}
+table(true_type, prediction_type)
+mean(true_type == prediction_type)
+```
+
+## block for ntree = 100
+
+```{r}
+ntree <- 100
+true_type <- numeric(0)
+prediction_type <- numeric(0)
+for (i in 1:10) {
+  X_train <- df_train[-folds[[i]],]
+  Y_train <- population_train[-folds[[i]]]
+  X_val <- df_train[folds[[i]],]
+  Y_val <- population_train[folds[[i]]]
+  
+  Y_train_CEU <- ifelse(Y_train == "CEU", 1, 0)
+  Y_train_FIN <- ifelse(Y_train == "FIN", 1, 0)
+  Y_train_GBR <- ifelse(Y_train == "GBR", 1, 0)
+  Y_train_IBS <- ifelse(Y_train == "IBS", 1, 0)
+  Y_train_TSI <- ifelse(Y_train == "TSI", 1, 0)
+  
+  
+  fit_CEU <- mc.gbart(X_train, Y_train_CEU, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_FIN <- mc.gbart(X_train, Y_train_FIN, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_GBR <- mc.gbart(X_train, Y_train_GBR, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_IBS <- mc.gbart(X_train, Y_train_IBS, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_TSI <- mc.gbart(X_train, Y_train_TSI, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  prob_matrix <- matrix(NA, nrow = length(Y_val), ncol = 5)
+  prob_matrix[,1] <- fit_CEU$prob.test.mean
+  prob_matrix[,2] <- fit_FIN$prob.test.mean
+  prob_matrix[,3] <- fit_GBR$prob.test.mean
+  prob_matrix[,4] <- fit_IBS$prob.test.mean
+  prob_matrix[,5] <- fit_TSI$prob.test.mean
+  
+  # select the column with the highest probability
+  prob_vector <- apply(prob_matrix, 1, which.max)
+  prediction <- case_when(prob_vector == 1 ~ "CEU",
+                          prob_vector == 2 ~ "FIN",
+                          prob_vector == 3 ~ "GBR",
+                          prob_vector == 4 ~ "IBS",
+                          prob_vector == 5 ~ "TSI")
+  
+  true_type <- c(true_type, Y_val)
+  prediction_type <- c(prediction_type, prediction)
+}
+table(true_type, prediction_type)
+mean(true_type == prediction_type)
+```
+
+## block for ntree = 500
+
+```{r}
+ntree <- 500
+true_type <- numeric(0)
+prediction_type <- numeric(0)
+for (i in 1:10) {
+  X_train <- df_train[-folds[[i]],]
+  Y_train <- population_train[-folds[[i]]]
+  X_val <- df_train[folds[[i]],]
+  Y_val <- population_train[folds[[i]]]
+  
+  Y_train_CEU <- ifelse(Y_train == "CEU", 1, 0)
+  Y_train_FIN <- ifelse(Y_train == "FIN", 1, 0)
+  Y_train_GBR <- ifelse(Y_train == "GBR", 1, 0)
+  Y_train_IBS <- ifelse(Y_train == "IBS", 1, 0)
+  Y_train_TSI <- ifelse(Y_train == "TSI", 1, 0)
+  
+  
+  fit_CEU <- mc.gbart(X_train, Y_train_CEU, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_FIN <- mc.gbart(X_train, Y_train_FIN, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_GBR <- mc.gbart(X_train, Y_train_GBR, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_IBS <- mc.gbart(X_train, Y_train_IBS, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_TSI <- mc.gbart(X_train, Y_train_TSI, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  prob_matrix <- matrix(NA, nrow = length(Y_val), ncol = 5)
+  prob_matrix[,1] <- fit_CEU$prob.test.mean
+  prob_matrix[,2] <- fit_FIN$prob.test.mean
+  prob_matrix[,3] <- fit_GBR$prob.test.mean
+  prob_matrix[,4] <- fit_IBS$prob.test.mean
+  prob_matrix[,5] <- fit_TSI$prob.test.mean
+  
+  # select the column with the highest probability
+  prob_vector <- apply(prob_matrix, 1, which.max)
+  prediction <- case_when(prob_vector == 1 ~ "CEU",
+                          prob_vector == 2 ~ "FIN",
+                          prob_vector == 3 ~ "GBR",
+                          prob_vector == 4 ~ "IBS",
+                          prob_vector == 5 ~ "TSI")
+  
+  true_type <- c(true_type, Y_val)
+  prediction_type <- c(prediction_type, prediction)
+}
+table(true_type, prediction_type)
+mean(true_type == prediction_type)
+```
+
+## On test
+
+```{r}
+ntree = 50
+X_train <- df_train
+X_val <- df_test
+Y_val <- population_test
+  
+  Y_train_CEU <- ifelse(population_train == "CEU", 1, 0)
+  Y_train_FIN <- ifelse(population_train == "FIN", 1, 0)
+  Y_train_GBR <- ifelse(population_train == "GBR", 1, 0)
+  Y_train_IBS <- ifelse(population_train == "IBS", 1, 0)
+  Y_train_TSI <- ifelse(population_train == "TSI", 1, 0)
+  
+  
+  fit_CEU <- mc.gbart(X_train, Y_train_CEU, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_FIN <- mc.gbart(X_train, Y_train_FIN, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_GBR <- mc.gbart(X_train, Y_train_GBR, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_IBS <- mc.gbart(X_train, Y_train_IBS, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  
+  fit_TSI <- mc.gbart(X_train, Y_train_TSI, x.test = X_val, 
+                 type = 'lbart', mc.cores = 4,
+                ntree = ntree,
+                 nskip = 2000,
+                 ndpost = 1000)
+  prob_matrix <- matrix(NA, nrow = length(Y_val), ncol = 5)
+  prob_matrix[,1] <- fit_CEU$prob.test.mean
+  prob_matrix[,2] <- fit_FIN$prob.test.mean
+  prob_matrix[,3] <- fit_GBR$prob.test.mean
+  prob_matrix[,4] <- fit_IBS$prob.test.mean
+  prob_matrix[,5] <- fit_TSI$prob.test.mean
+  
+  # select the column with the highest probability
+  prob_vector <- apply(prob_matrix, 1, which.max)
+  prediction <- case_when(prob_vector == 1 ~ "CEU",
+                          prob_vector == 2 ~ "FIN",
+                          prob_vector == 3 ~ "GBR",
+                          prob_vector == 4 ~ "IBS",
+                          prob_vector == 5 ~ "TSI")
+  
+
+  table(Y_val, prediction, dnn = c("true", "prediction"))
+print(paste("accuracy is:", mean(Y_val == prediction)))
+```
